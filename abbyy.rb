@@ -2,7 +2,7 @@ require 'mixlib/shellout'
 require 'logger'
 class Abbyy9
   attr_accessor :logger
-  def initialize work_dir, bin_path='/opt/abbyyocr/abbyyocr9'
+  def initialize work_dir, bin_path='/opt/ABBYYOCR9//abbyyocr9'
     @bin_path=bin_path
     FileUtils.mkdir_p work_dir, :mode => 0700 unless File.exist? work_dir
     @work_dir = work_dir
