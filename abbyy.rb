@@ -1,9 +1,12 @@
 require 'mixlib/shellout'
+require 'logger'
 class Abbyy9
+  attr_accessor :logger
   def initialize work_dir, bin_path='/opt/abbyyocr/abbyyocr9'
     @bin_path=bin_path
     FileUtils.mkdir_p work_dir, :mode => 0700 unless File.exist? work_dir
     @work_dir = work_dir
+    self.logger=Logger.new('/dev/null')
   end
 
   def process document, filename="document.pdf"
@@ -25,7 +28,6 @@ class Abbyy9
 
     output_formats.each do |f|
       type, options = f.first
-      #puts "#{type} => #{options.inspect}"
       case type
         when :pdfa
           command << " -f PDFA"
@@ -44,11 +46,11 @@ class Abbyy9
       command << " -of #{File.join(output_dir,output_file)}"
       output_files << output_file
     end
-
-    #abby_cli = Mixlib::ShellOut.new("command")
-    #abby_cli.run_command
+    logger.info command
+    ocr_command = Mixlib::ShellOut.new("command")
+    ocr_command.logger=logger
+    ocr_command.run_command
     #abby_cli.error!
-    puts command
     return output_dir => output_files
   end
 
