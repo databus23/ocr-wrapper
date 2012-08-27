@@ -37,6 +37,7 @@ logger.datetime_format = "%Y-%m-%d %H:%M:%S"
 #puts options.inspect
 
 tmp_dir=File.join(ENV['HOME'],'ocr')
+FileUtils.mkdir_p tmp_dir unless File.exist? tmp_dir
 
 Dir.mktmpdir('ocr',tmp_dir) do |dir|
   logger.debug "Creating tempdir #{dir}"
