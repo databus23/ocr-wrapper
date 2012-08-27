@@ -46,8 +46,7 @@ class Abbyy9
       command << " -of #{File.join(output_dir,output_file)}"
       output_files << output_file
     end
-    logger.info command
-    ocr_command = Mixlib::ShellOut.new("command")
+    ocr_command = Mixlib::ShellOut.new(command)
     ocr_command.logger=logger
     ocr_command.run_command
     #abby_cli.error!
