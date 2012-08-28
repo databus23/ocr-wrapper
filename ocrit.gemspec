@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.email       = 'databus23@gmail.com'
   s.homepage    = 'https://github.com/databus23/ocr-wrapper'
   s.has_rdoc    = false
-  s.files       = Dir['lib/ocr/*.rb']
+  s.files       = Dir['lib/ocrit/*.rb']
   s.bindir     = 'bin'
   s.executables = %w{ocrit}
   s.add_dependency('mixlib-shellout')
