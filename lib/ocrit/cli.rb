@@ -17,7 +17,7 @@ module OCRIt
         opts.banner = "Usage: #{File.basename $0} [options] [inputfile]"
         opts.on('-o', '--output-filename [NAME]',
                 "Basename of the output files. defaults to input filename of 'document.pdf'") do |f|
-          options[:output_name] = filename
+          options[:output_name] = f
         end
         opts.on('-l', "--log-file [FILE]",
                       "log to file. default: STDERR") do |l|
