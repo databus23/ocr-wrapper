@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ocrit'
-  s.version     = '0.0.1'
+  s.version     = '0.0.2'
   s.summary     = "OCR wrapper around finereader cli for linux!"
   s.description = "A simple hello world gem"
   s.authors     = ["databus23"]
