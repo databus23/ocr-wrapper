@@ -4,4 +4,4 @@ require 'rubygems'
 $:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 require 'ocrit/cli'
 
-OCRIt::Cli.new.run
+OCRIt::Cli.bin!

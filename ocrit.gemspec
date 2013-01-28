@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.bindir     = 'bin'
   s.executables = %w{ocrit}
   s.add_dependency('mixlib-shellout')
+  s.add_dependency('thor')
 end

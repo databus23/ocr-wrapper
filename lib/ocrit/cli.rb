@@ -1,68 +1,93 @@
-
 require 'tmpdir'
 require 'ocrit/abbyy'
-require 'optparse'
 require 'mixlib/shellout'
 require 'logger'
+require 'thor'
+require 'yaml'
+
 module OCRIt
-  class Cli
-    def initialize
-      @logger = Logger.new(STDERR)
-      @logger.datetime_format = "%Y-%m-%d %H:%M:%S"
-    end
-    def run
-      options = {}
-
-      rest = OptionParser.new do |opts|
-        opts.banner = "Usage: #{File.basename $0} [options] [inputfile]"
-        opts.on('-o', '--output-filename [NAME]',
-                "Basename of the output files. defaults to input filename of 'document.pdf'") do |f|
-          options[:output_name] = f
-        end
-        opts.on('-l', "--log-file [FILE]",
-                      "log to file. default: STDERR") do |l|
-          options[:logfile]=l
-          @logger=Logger.new(options[:logfile])
-        end
-        opts.on_tail("-h", "--help", "Show this message") do
-          puts opts
-          exit
-        end
-      end.order!
-
-      if rest.empty?
-        options[:input] = STDIN.read
-      else
-        options[:inputfile] = rest.first
-        options[:output_name] ||= File.basename options[:inputfile]
+  class Cli < Thor
+    include Thor::Actions
+    
+    class <<self
+      def bin!
+        start 
       end
-
-      options[:output_name]||='document.pdf'
-
-
+    end
+     
+    desc 'process', 'Receive input file via STDIN and return ocr result via stdout'
+    method_option :logfile, :aliases => '-l'
+    method_option :ocr_bin, :default => '/opt/ABBYYOCR9/abbyyocr9'
+    method_option :languages, :type=> :array, :default => %w(German English)
+    method_option :opts, :type => :array
+    method_option :exports, :type => :array, :default => %w(f:PDFA pdfaPictureResolution:original pdfaQuality:85 pdfExportMode:ImageOnText of:{INPUT}.pdf)
+    method_option :mock, :type => :boolean, :default => false 
+    def process
       tmp_dir=File.join(ENV['HOME'],'ocr')
       FileUtils.mkdir_p tmp_dir unless File.exist? tmp_dir
-
       Dir.mktmpdir('ocr',tmp_dir) do |dir|
-        @logger.debug "Creating tempdir #{dir}"
-        abbyy = Abbyy9.new dir
-        abbyy.logger=@logger
-        output_dir, output_files = if options[:input]
-          abbyy.process(options[:input], options[:output_name])
-        else
-          abbyy.process_file(options[:inputfile])
-        end.first
-
-        tar_command = "tar -c -z -f - -C #{output_dir} #{output_files.join(' ')}"
-        tar_cli = Mixlib::ShellOut.new(tar_command)
-        tar_cli.logger=@logger
-        tar_cli.live_stream=STDOUT
-        tar_cli.run_command
+        logger.debug "Creating tempdir #{dir}"
+        input_file = STDIN.read
+        abbyy = Abbyy9.new(CoreExt::HashWithIndifferentAccess.new({work_dir: dir, input: input_file, logger: logger}.merge options))
+        
+        output_dir, output_files = abbyy.process
+        tar = Mixlib::ShellOut.new("tar -c -z -f - -C #{output_dir} #{output_files.join(' ')}")
+        tar.logger=logger
+        tar.live_stream=STDOUT
+        tar.run_command
+        tar.error! 
       end
     rescue => e
-      @logger.error "An error occurred: #{e.message}"
-      @logger.error "Backtrace:\n#{e.backtrace.join("\n")}"
+      logger.error "An error occurred: #{e.message}"
+      logger.error "Backtrace:\n#{e.backtrace.join("\n")}"
       exit 1
+ 
+    end
+
+    desc 'remote INPUT_FILE OUTPUT_DIR', 'Send input file via ssh to remote ocr server'
+    method_option :config, :alias => '-c', :default => '~/.ocrit'
+    method_option :user, :alias => '-u'
+    method_option :host, :alias => '-h'
+    method_option :output_name, :alias => '-o'
+    def remote(input_file, output_dir)
+      config = config_from_file options[:config]
+      user = options[:user] || config['user'] || ENV['USER']
+      host = options[:host] || config['host']
+      output_name = options[:output_name] || File.basename(input_file).gsub(/\.[^.]+$/,'')
+
+      cmd = 'ocrit process'
+      cmd << ' --mock' if ENV['MOCK']
+      cmd << " --languages=#{config['languages'].join(' ')}" if config['languages']
+      %w{opts exports}.each do |key|
+        next unless config[key]
+        cmd << " --#{key}=" << config[key].collect_concat{|v| v.collect {|k,v| v ? "#{k}:#{v}" : k} }.compact.join(' ')
+      end
+      cmd.gsub!(/%INPUT%/, output_name) 
+      ssh = Mixlib::ShellOut.new("ssh #{user}@#{host} #{cmd} < #{input_file}", timeout: 600, logger:logger)
+      #shell.live_stream = STDOUT
+      ssh.run_command
+      ssh.error!
+      puts ssh.stderr if ssh.stderr
+      tar = Mixlib::ShellOut.new("tar -zx -C #{output_dir}", logger:logger)
+      tar.input = ssh.stdout
+      tar.run_command
+      tar.error!
+    end
+
+    private
+    def config_from_file file
+      config_file = File.expand_path file
+      YAML::load(IO.read config_file) if File.exist? config_file
+    end
+    def logger
+      @logger ||= begin
+        l = Logger.new(STDERR)
+        hostname = `hostname`.gsub(/(\..*)?\s*$/,'')[0,8].ljust(8,' ')
+        l.formatter = proc do |severity, datetime, progname, msg|
+          "#{datetime.strftime('%b %d %H:%M:%S')} #{hostname} #{msg}\n"
+        end
+        l
+      end 
     end
   end
 end
