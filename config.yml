@@ -1,0 +1,19 @@
+languages:
+- German
+- English
+opts:
+  detectImageOrientation:
+exports:
+- outputFileFormat: PDFA
+  pdfaPictureResolution: original
+  pdfaQuality: 85
+  pdfExportMode: ImageOnText
+  outputFileName: '%INPUT%.pdf'
+- outputFileFormat: PDFA
+  pdfaPictureResolution: original
+  pdfaQuality: 85
+  pdfExportMode: TextOnly
+  outputFileName: '%INPUT%_text.pdf'
+- outputFileFormat: Text 
+  txtInsertEmptyLineBetweenParagraphs:
+  outputFileName: '%INPUT%.txt'

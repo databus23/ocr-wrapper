@@ -45,17 +45,18 @@ module OCRIt
     end
 
     desc 'remote INPUT_FILE OUTPUT_DIR', 'Send input file via ssh to remote ocr server'
-    method_option :config, :alias => '-c', :default => '~/.ocrit'
-    method_option :user, :alias => '-u'
-    method_option :host, :alias => '-h'
-    method_option :output_name, :alias => '-o'
+    method_option :config, :aliases => '-c', :default => '~/.ocrit'
+    method_option :user, :aliases => '-u'
+    method_option :host, :aliases => '-h'
+    method_option :output_name, :aliases => '-o'
+    method_option :remote_command, :aliases => '-r'
     def remote(input_file, output_dir)
       config = config_from_file options[:config]
       user = options[:user] || config['user'] || ENV['USER']
       host = options[:host] || config['host']
       output_name = options[:output_name] || File.basename(input_file).gsub(/\.[^.]+$/,'')
-
-      cmd = 'ocrit process'
+      remote_command = options['remote_command'] || config['remote_command'] || 'ocrit'
+      cmd = "#{remote_command} process"
       cmd << ' --mock' if ENV['MOCK']
       cmd << " --languages=#{config['languages'].join(' ')}" if config['languages']
       %w{opts exports}.each do |key|
