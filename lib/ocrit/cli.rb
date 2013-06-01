@@ -26,16 +26,17 @@ module OCRIt
       tmp_dir=File.join(ENV['HOME'],'ocr')
       FileUtils.mkdir_p tmp_dir unless File.exist? tmp_dir
       Dir.mktmpdir('ocr',tmp_dir) do |dir|
-        logger.debug "Creating tempdir #{dir}"
-        input_file = STDIN.read
-        abbyy = Abbyy9.new(CoreExt::HashWithIndifferentAccess.new({work_dir: dir, input: input_file, logger: logger}.merge options))
-        
-        output_dir, output_files = abbyy.process
-        tar = Mixlib::ShellOut.new("tar -c -z -f - -C #{output_dir} #{output_files.join(' ')}")
-        tar.logger=logger
-        tar.live_stream=STDOUT
-        tar.run_command
-        tar.error! 
+        logger.debug "Created tempdir #{dir}"
+        Dir.chdir(dir) do |dir|
+          input_file = STDIN.read
+          abbyy = Abbyy9.new(CoreExt::HashWithIndifferentAccess.new({work_dir: dir, input: input_file, logger: logger}.merge options))
+          output_dir, output_files = abbyy.process
+          tar = Mixlib::ShellOut.new("tar -c -z -f - -C #{output_dir} #{output_files.join(' ')}")
+          tar.logger=logger
+          tar.live_stream=STDOUT
+          tar.run_command
+          tar.error!
+        end 
       end
     rescue => e
       logger.error "An error occurred: #{e.message}"
