@@ -75,6 +75,21 @@ module OCRIt
       tar.error!
     end
 
+    desc 'pages LICENSE', 'Show Abbyy page counter'
+    method_option :config, :aliases => '-c', :default => '~/.ocrit'
+    def pages(license = nil)
+      config = config_from_file(options[:config])
+      user = options[:user] || config['user'] || ENV['USER']
+      host = options[:host] || config['host']
+      license ||= config['license']
+
+      ssh = Mixlib::ShellOut.new("ssh #{user}@#{host} abbyyocr9LV #{license}", timeout: 600, logger:logger)
+      ssh.run_command
+      ssh.error!
+      puts "Pages per year : " + ssh.stdout[/(\d+) pages per year available to process/,1]
+      puts "Pages left     : " + ssh.stdout[/Current: (\d+) pages?/,1]
+    end
+
     private
     def config_from_file file
       config_file = File.expand_path file

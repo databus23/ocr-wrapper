@@ -7,13 +7,16 @@ exports:
 - outputFileFormat: PDFA
   pdfaPictureResolution: original
   pdfaQuality: 85
-  pdfExportMode: ImageOnText
+  pdfaExportMode: ImageOnText
   outputFileName: '%INPUT%.pdf'
 - outputFileFormat: PDFA
   pdfaPictureResolution: original
   pdfaQuality: 85
-  pdfExportMode: TextOnly
+  pdfaExportMode: TextOnly
   outputFileName: '%INPUT%_text.pdf'
 - outputFileFormat: Text 
   txtInsertEmptyLineBetweenParagraphs:
+  txtEncodingType: UTF8
   outputFileName: '%INPUT%.txt'
+- outputFileFormat: XML 
+  outputFileName: '%INPUT%.xml'
