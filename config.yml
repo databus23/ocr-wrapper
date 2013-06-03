@@ -8,15 +8,15 @@ exports:
   pdfaPictureResolution: original
   pdfaQuality: 85
   pdfaExportMode: ImageOnText
-  outputFileName: '%INPUT%.pdf'
+  outputFileName: '{NAME}.pdf'
 - outputFileFormat: PDFA
   pdfaPictureResolution: original
   pdfaQuality: 85
   pdfaExportMode: TextOnly
-  outputFileName: '%INPUT%_text.pdf'
+  outputFileName: '{NAME}_text.pdf'
 - outputFileFormat: Text 
   txtInsertEmptyLineBetweenParagraphs:
   txtEncodingType: UTF8
-  outputFileName: '%INPUT%.txt'
+  outputFileName: '{NAME}.txt'
 - outputFileFormat: XML 
-  outputFileName: '%INPUT%.xml'
+  outputFileName: '{NAME}.xml'

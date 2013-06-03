@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ocrit'
-  s.version     = '0.0.2'
+  s.version     = '0.0.3'
   s.summary     = "OCR wrapper around finereader cli for linux!"
   s.description = "A simple hello world gem"
   s.authors     = ["databus23"]
@@ -12,4 +12,5 @@ Gem::Specification.new do |s|
   s.executables = %w{ocrit}
   s.add_dependency('mixlib-shellout')
   s.add_dependency('thor')
+  s.add_dependency('sqlite3')
 end
