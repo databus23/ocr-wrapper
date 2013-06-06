@@ -114,46 +114,45 @@ module OCRIt
       #config = config_from_file options[:config]
       Dir.glob(File.join input_dir, options[:input_filter]).each do |input|
         next if File.exists?(input + '.error.log')
-        logger.info "-----------------------------------------------------"
-        logger.info "Processing file #{input}"
-        output_name = expand_name options[:name]
-        Dir.mktmpdir('ocr') do |dir|
-          
-          ocrit = Mixlib::ShellOut.new("#{$0} remotex -l STDOUT --output_name #{output_name} #{input} #{dir}", timeout: 600, logger:logger)
-          ocrit.run_command
-          logger<< ocrit.stdout
-          begin
+        begin
+          logger.info "-----------------------------------------------------"
+          logger.info "Processing file #{input}"
+          output_name = expand_name options[:name]
+          Dir.mktmpdir('ocr') do |dir|
+            ocrit = Mixlib::ShellOut.new("#{$0} remote -l STDOUT --output_name #{output_name} #{input} #{dir}", timeout: 600, logger:logger)
+            ocrit.run_command
+            logger<< ocrit.stdout
             ocrit.error!
-          rescue => e
-            logger.error "Failed to process #{input}"
-            File.open(input + '.error.log', 'w') do |f|
-               f.write(e.message)
-            end
-            next
-          end
-          Dir.glob(File.join dir, '*').each do |file|
-            if file =~ Regexp.new(options[:output_filter].gsub(/{NAME}/,output_name))
-              logger.info "Moving #{File.basename file} to #{output_dir}"
-              FileUtils.mv file, output_dir
-            else
-              if archive_dir
-                logger.info "Archieving #{File.basename file} to #{archive_dir}"
-                FileUtils.mv file, archive_dir
+            Dir.glob(File.join dir, '*').each do |file|
+              if file =~ Regexp.new(options[:output_filter].gsub(/{NAME}/,output_name))
+                logger.info "Moving #{File.basename file} to #{output_dir}"
+                FileUtils.mv file, output_dir
               else
-                logger.info "Discarding #{file}"
+                if archive_dir
+                  logger.info "Archieving #{File.basename file} to #{archive_dir}"
+                  FileUtils.mv file, archive_dir
+                else
+                  logger.info "Discarding #{file}"
+                end
               end
             end
+            if archive_dir
+              dest = File.join archive_dir, "#{output_name}_original#{suffix input}" 
+              logger.info "Archieving input file #{File.basename input} to #{dest}"
+              FileUtils.mv input, dest
+            else
+              logger.info "Deleting input file #{File.basename input}"
+              FileUtils.safe_unlink input
+            end
           end
-          if archive_dir
-            dest = File.join archive_dir, "#{output_name}_original#{suffix input}" 
-            logger.info "Archieving input file #{File.basename input} to #{dest}"
-            FileUtils.mv input, dest
-          else
-            logger.info "Deleting input file #{File.basename input}"
-            FileUtils.safe_unlink input
+          logger.info "Completed processing #{input}"
+          logger.info "-----------------------------------------------------"
+        rescue => e
+          logger.error "Failed to process #{input}"
+          File.open(input + '.error.log', 'w') do |f|
+             f.write(e.message)
           end
-        logger.info "Completed processing #{input}"
-        logger.info "-----------------------------------------------------"
+          next
         end 
       end
     rescue => e
